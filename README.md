@@ -4,8 +4,7 @@ Submitted to ICoICT 2026.
 
 ## Author
 
-M. Rifqi Dzaky Azhad
-Fakultas Informatika, S1 Informatika, Telkom University
+M. Rifqi Dzaky Azhad, Fakultas Informatika, S1 Informatika, Telkom University
 
 ## Structure
 
@@ -20,26 +19,3 @@ src/
 scripts/                 # utility scripts
 result/                  # figures and CSVs
 ```
-
-## Run
-
-```bash
-# 1. preprocess
-python src/preprocessing/preprocessing.py
-
-# 2. train encoder
-python src/module1_contrastive/train.py
-
-# 3. validate
-python src/module2_validation/cross_provider_nn.py
-
-# 4. affinity module
-python src/module3_affinity/train.py
-python src/module3_affinity/inference.py
-
-# 5. analysis
-python src/analysis/ks_comparison.py
-python src/analysis/ablation.py
-```
-
-Dataset not included (proprietary).
