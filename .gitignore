@@ -31,8 +31,7 @@ venv/
 .ipynb_checkpoints/
 
 # ── literature pdfs (large binaries) ─────────────────────────────────────────
-literature_review/scopus-literature_review/
-literature_review/manual-paper/
+literature_review/
 
 # ── claude / ai traces ────────────────────────────────────────────────────────
 .claude/
@@ -45,5 +44,3 @@ notebook/
 .DS_Store
 Thumbs.db
 desktop.ini
-"literature_review/" 
-"literature_review/" 
