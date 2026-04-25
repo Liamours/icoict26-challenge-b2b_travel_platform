@@ -1,0 +1,12 @@
+feature,quality_acc_perturbed,quality_acc_drop,baseline_acc
+lon_norm,0.9898,0.0032,0.993
+lat_norm,0.9909,0.0021,0.993
+star_norm,0.9919,0.0011,0.993
+star_score,0.9919,0.0011,0.993
+guest_miss,0.9925,0.0005,0.993
+avail,0.9925,0.0005,0.993
+star_miss,0.993,0.0,0.993
+guest_norm,0.993,0.0,0.993
+pop_score,0.993,0.0,0.993
+price_miss,0.993,0.0,0.993
+price_norm,0.9936,-0.0005,0.993

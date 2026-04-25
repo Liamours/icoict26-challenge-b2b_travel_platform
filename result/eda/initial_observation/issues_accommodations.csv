@@ -1,0 +1,12 @@
+column,null_count,null_pct,non_numeric,below_min,above_max,out_of_range,actual_min,actual_max,invalid_coords
+id,0,0.0,,,,,,,
+popularity,2702067,73.15,0.0,0.0,0.0,0.0,0.0,100.0,
+popularity_score,0,0.0,0.0,0.0,0.0,0.0,1.0,102.0,
+star_rating,261442,7.08,0.0,64.0,0.0,64.0,-1.0,5.0,
+star_rating_score,0,0.0,0.0,0.0,0.0,0.0,1.0,7.0,
+guest_rating,2913626,78.87,0.0,0.0,642794.0,642794.0,0.0,100.0,
+guest_rating_count,2913626,78.87,0.0,0.0,0.0,0.0,0.0,49556.0,
+availability_score,0,0.0,0.0,4419.0,2560.0,6979.0,-962.0,7749.0,
+reference_price,0,0.0,0.0,0.0,208.0,208.0,0.0,1286412055.97,
+price_in_aud,0,0.0,0.0,0.0,211.0,211.0,0.0,1286412055.97,
+destination_coordinate,0,0.0,,,,,,,0.0

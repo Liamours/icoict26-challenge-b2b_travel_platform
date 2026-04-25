@@ -1,0 +1,47 @@
+# ── datasets (large / sensitive) ─────────────────────────────────────────────
+dataset/raw/
+dataset/preprocessed/
+dataset/external/
+
+# ── large result artifacts ────────────────────────────────────────────────────
+result/c1_contrastive/property_embeddings.npy
+result/c1_contrastive/property_ids.npy
+result/c2_validation/transaction_property_embeddings.npy
+result/c2_validation/transaction_property_ids.npy
+result/c3_affinity/activity_embeddings.npy
+
+# ── model weights ─────────────────────────────────────────────────────────────
+**/*.pth
+
+# ── python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.egg-info/
+
+# ── conda / virtualenv ────────────────────────────────────────────────────────
+.conda/
+env/
+venv/
+.venv/
+
+# ── jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── literature pdfs (large binaries) ─────────────────────────────────────────
+literature_review/scopus-literature_review/
+literature_review/manual-paper/
+
+# ── claude / ai traces ────────────────────────────────────────────────────────
+.claude/
+guide/
+manuscript/
+result/report/
+notebook/
+
+# ── os ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

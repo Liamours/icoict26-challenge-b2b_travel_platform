@@ -1,0 +1,8 @@
+column,null_count,null_pct,non_numeric,below_min,above_max,out_of_range,actual_min,actual_max,invalid_coords
+rating,0,0.0,0.0,0.0,6624.0,6624.0,0.0,251.0,
+normalized_rating,0,0.0,957.0,0.0,303806.0,303806.0,0.0,100.0,
+duration_hours,0,0.0,0.0,0.0,138.0,138.0,0.0,24000.0,
+price,0,0.0,0.0,0.0,42.0,42.0,0.0,640000000.0,
+price_in_aud,0,0.0,0.0,0.0,1.0,1.0,0.0,14640223.57,
+availability_score,0,0.0,0.0,0.0,0.0,0.0,91.0,180.0,
+destination_coordinate,5310,1.02,,,,,,,65594.0

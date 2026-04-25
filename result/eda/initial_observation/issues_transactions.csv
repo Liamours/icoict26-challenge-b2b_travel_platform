@@ -1,0 +1,5 @@
+column,null_count,null_pct,unparseable_dates,out_of_range,non_numeric,below_min,above_max,actual_min,actual_max
+payment_date,0,0.0,0.0,0.0,,,,,
+Property Id,0,0.0,,,,,,,
+Product,0,0.0,,,,,,,
+Number Transactions,0,0.0,,0.0,0.0,0.0,0.0,1.0,12.0

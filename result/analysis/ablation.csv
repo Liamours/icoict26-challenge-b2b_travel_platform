@@ -1,0 +1,4 @@
+variant,quality_acc,cp_nn_rate,provider_masked,random_baseline
+A: Raw features (no encoder),0.8615,0.0415,N/A,0.75
+"B: Encoder, no masking",0.9957,0.5831,No,0.75
+C: Encoder + masking (proposed),0.9946,0.5911,Yes,0.75
