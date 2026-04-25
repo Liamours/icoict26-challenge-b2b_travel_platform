@@ -4,8 +4,8 @@ Submitted to ICoICT 2026.
 
 ## Author
 
-**Rifqi Luay Adani**  
-Informatics, Telkom University
+M. Rifqi Dzaky Azhad
+Fakultas Informatika, S1 Informatika, Telkom University
 
 ## Structure
 
