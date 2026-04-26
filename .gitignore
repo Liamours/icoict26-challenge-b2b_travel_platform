@@ -40,6 +40,16 @@ manuscript/
 result/report/
 notebook/
 
+# ── paper tooling scripts ─────────────────────────────────────────────────────
+scripts/read_pdf.py
+scripts/read_report.py
+scripts/copy_figures.py
+scripts/regen_tsne.py
+scripts/*.txt
+src/report/
+src/temp_*.py
+src/*_OLD/
+
 # ── os ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
