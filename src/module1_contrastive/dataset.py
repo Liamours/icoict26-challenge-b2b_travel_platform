@@ -30,22 +30,23 @@ class AccommodationVocab:
 def build_continuous_features(df: pd.DataFrame) -> np.ndarray:
     star = df["star_rating"].values
     star_miss = np.isnan(star).astype(np.float32)
-    star_norm = np.where(np.isnan(star), 0.0, star / 5.0).astype(np.float32)
+    star_norm = np.where(np.isnan(star), 0.0, star / 5.0).astype(np.float32)   # range [0,5]
 
     guest = df["guest_rating"].values
     guest_miss = np.isnan(guest).astype(np.float32)
-    guest_norm = np.where(np.isnan(guest), 0.0, guest / 10.0).astype(np.float32)
+    guest_norm = np.where(np.isnan(guest), 0.0, guest / 10.0).astype(np.float32)  # range [0,10]
 
-    star_score = (df["star_rating_score"].fillna(0).values / 7.0).astype(np.float32)
-    pop_score = (df["popularity_score"].fillna(0).values / 102.0).astype(np.float32)
-    avail = (df["availability_score"].values / 200.0).astype(np.float32)
+    star_score = (df["star_rating_score"].fillna(0).values / 7.0).astype(np.float32)   # observed max=7
+    pop_score = (df["popularity_score"].fillna(0).values / 102.0).astype(np.float32)   # observed max=102
+    avail = (df["availability_score"].values / 200.0).astype(np.float32)               # range [0,200]
 
     price = df["price_in_aud"].values
     price_miss = np.isnan(price).astype(np.float32)
+    # log1p then /15 maps 99th-pct price (~AUD 3.3M) to ~1.2; keeps outlier impact bounded
     price_norm = np.where(np.isnan(price), 0.0, np.log1p(np.where(np.isnan(price), 0, price)) / 15.0).astype(np.float32)
 
-    lat_norm = (df["lat"].fillna(0).values / 90.0).astype(np.float32)
-    lon_norm = (df["lon"].fillna(0).values / 180.0).astype(np.float32)
+    lat_norm = (df["lat"].fillna(0).values / 90.0).astype(np.float32)    # range [-90,90]
+    lon_norm = (df["lon"].fillna(0).values / 180.0).astype(np.float32)   # range [-180,180]
 
     return np.stack([
         star_norm, star_miss,

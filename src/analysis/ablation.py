@@ -109,9 +109,10 @@ def main():
     fv.n_countries = vocab.n_countries
 
     model = build_model(fv).to(DEVICE)
-    model.encoder.load_state_dict(
-        torch.load(C1_RESULT / "encoder_best.pth", map_location=DEVICE)
-    )
+    ckpt_path = C1_RESULT / "encoder_best.pth"
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Encoder checkpoint not found: {ckpt_path}\nRun src/module1_contrastive/train.py first.")
+    model.encoder.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
     model.eval()
 
     results = []
