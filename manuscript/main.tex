@@ -23,7 +23,7 @@
 \maketitle
 
 \begin{abstract}
-Business-to-business (B2B) travel platforms combine accommodation listings from several booking providers. Star ratings in this setting are not directly comparable because each provider applies its own rating scale and data process. We study a contrastive encoder for accommodation quality embeddings on 3.69 million accommodation records from four providers. Positive pairs are sampled from destination--quality-tier groups, and the provider token is masked at inference. The resulting embeddings reduce mean per-dimension cross-provider Kolmogorov--Smirnov (KS) divergence from 0.304 to 0.130 and raise cross-provider nearest-neighbour mixing (CP-NN@10) from 16.7\% to 59.1\%. These results show improved provider mixing, not full provider invariance: provider identity remains recoverable and CP-NN remains below the 75.0\% random-mixing baseline. Short-run provider-removal, CORAL, MMD, and gradient-reversal baselines do not clearly improve CP-NN over stochastic masking.
+Hotel inventory is easy to merge at the schema level, but quality fields are harder to merge statistically. A star rating supplied by one provider is not always comparable with the same rating from another provider. We study this problem using 3.69 million accommodation records from four providers and train a contrastive encoder for accommodation quality embeddings. Positive pairs are built from destination--quality-tier co-membership, and the provider token is masked at inference. The resulting embeddings reduce mean per-dimension cross-provider Kolmogorov--Smirnov (KS) divergence from 0.304 to 0.130 and increase cross-provider nearest-neighbour mixing (CP-NN@10) from 16.7\% to 59.1\%. We treat this as a representation result, not as proof of ranking improvement. Provider identity remains recoverable, CP-NN remains below the 75.0\% random-mixing baseline, and provider-removal, CORAL, MMD, and gradient-reversal baselines do not clearly improve CP-NN over stochastic masking.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -33,28 +33,28 @@ contrastive learning, provider invariance, accommodation embeddings, representat
 % ---------------------------------------------------------------
 \section{Introduction}
 
-Online travel distribution increasingly depends on aggregation. A B2B travel platform may combine accommodation inventory from several booking providers and expose that inventory through banks, agencies, loyalty portals, or other partner channels. Aggregation improves coverage, but it also makes ranking harder because the same field can have different meanings across suppliers.
+Travel platforms are rarely supplied by one source. A business-to-business (B2B) platform may receive accommodation inventory from several booking providers and then expose the combined catalogue through banks, agencies, loyalty portals, or other partner channels. This improves coverage, but it also creates a quieter data problem: two suppliers can send fields with the same name while using different internal definitions.
 
-This paper focuses on accommodation quality signals, especially star ratings. A five-star property from one provider is not necessarily equivalent to a five-star property from another provider. If a ranking system treats provider-native ratings as directly comparable, providers with inflated or differently calibrated ratings may be favored. In our dataset, raw star-rating distributions reach a KS divergence of 0.707 for the most separated provider pair. The data also show an inventory--booking imbalance: one provider contributes 53.7\% of inventory but only 6.4\% of completed transactions. This does not prove that rating mismatch causes lower conversion, but it motivates a representation that is less tied to provider-native rating scales.
+The clearest example in the Travlr dataset is the accommodation star rating. A five-star property from one provider is not necessarily the same product class as a five-star property from another. If a ranking layer treats those ratings as interchangeable, the system can favor a provider with a more generous scale. Analysis of the dataset shows that the most separated pair of raw star-rating distributions has a Kolmogorov--Smirnov (KS) divergence of 0.707 (Table~\ref{tab:dataset}). The dataset also contains a strong inventory--booking imbalance: one provider contributes 53.7\% of inventory but only 6.4\% of completed transactions (Table~\ref{tab:dataset}). That imbalance does not show causality, but it is enough reason to avoid using provider-native fields without checking their comparability.
 
-The task is therefore narrow: given multi-provider accommodation data without verified cross-provider property links, learn embeddings that preserve useful quality information while reducing provider-specific structure. We train a 128-dimensional contrastive encoder using destination--quality-tier co-membership as weak supervision. At inference, the explicit provider token is set to the masked value.
+We make a narrow choice. Rather than building a complete ranking system, we ask whether accommodation records can be embedded so that quality-tier information is retained while provider-specific structure is reduced. Verified cross-provider links for the same physical property are not available, so we train from a weaker signal: properties in the same destination and quality tier. The learned representation is 128-dimensional, and the explicit provider token is replaced by a masked value at inference.
 
-Prior work gives useful components, but does not directly solve this setting. Huda et al.~\cite{huda2024smart} combine collaborative, demographic, sentiment, and content-based signals for tourism recommendation. Essien et al.~\cite{essien2023deep} review deep-learning applications in hospitality, tourism, and travel. Alamsyah et al.~\cite{alamsyah2019ann} use neural networks for tourism demand forecasting. These papers show the relevance of learning-based methods in travel, but do not study provider rating-scale mismatch inside one aggregated B2B catalogue.
+Existing work motivates pieces of the approach, but not the exact setting. In tourism recommendation, Huda et al.~\cite{huda2024smart} combine collaborative, demographic, sentiment, and content-based signals. Essien et al.~\cite{essien2023deep} review deep-learning applications in hospitality, tourism, and travel. Alamsyah et al.~\cite{alamsyah2019ann} use neural networks for tourism demand forecasting. These studies show how learning methods are used in travel analytics, but they do not study rating-scale mismatch inside one aggregated B2B catalogue.
 
-The representation-learning literature motivates the encoder. SimCLR~\cite{chen2020simclr} trains representations from augmented positive views using normalized temperature-scaled cross entropy (NT-Xent). Wang and Isola~\cite{wang2022understanding} describe alignment and uniformity as useful contrastive-learning properties. Gao et al.~\cite{gao2021simcse} show that simple dropout can work as augmentation, and Xia et al.~\cite{yao2021self} use self-supervised graph co-training for recommendation. Khosla et al.~\cite{khosla2020supervised} extend contrastive learning to supervised labels. These methods support the contrastive setup, but they do not address provider-aware accommodation quality.
+The representation model follows contrastive learning. SimCLR~\cite{chen2020simclr} trains representations from augmented positive views using normalized temperature-scaled cross entropy (NT-Xent). Wang and Isola~\cite{wang2022understanding} analyze alignment and uniformity, Gao et al.~\cite{gao2021simcse} show that dropout can act as augmentation, and Xia et al.~\cite{yao2021self} use self-supervised graph co-training for recommendation. Khosla et al.~\cite{khosla2020supervised} extend contrastive learning to supervised labels. Our case is less clean because the label-like signal is noisy and the provider field is both useful metadata and a source of bias.
 
-Domain-invariant learning and calibration are the closest alternatives. Ganin and Lempitsky~\cite{ganin2015unsupervised} use a gradient reversal layer (GRL) to reduce domain separability. Ozyurt et al.~\cite{ozyurt2023cluda} combine contrastive learning with unsupervised domain adaptation. Bai et al.~\cite{bai2024kddebias} study debiasing in recommendation. A simpler option is provider-specific monotonic calibration or ordinal regression with provider offsets~\cite{mccullagh1980regression}. We compare against simple calibration, provider-token removal, covariance alignment (CORAL), maximum mean discrepancy (MMD) alignment, and GRL baselines.
+The closest alternatives are calibration and domain-invariant learning. A provider-specific rating scale can be adjusted with a monotonic mapping or an ordinal model with provider offsets~\cite{mccullagh1980regression}. Domain-adversarial methods, including the gradient reversal layer (GRL) of Ganin and Lempitsky~\cite{ganin2015unsupervised}, try to reduce domain separability directly. Ozyurt et al.~\cite{ozyurt2023cluda} combine contrastive learning with domain adaptation, and Bai et al.~\cite{bai2024kddebias} study debiasing in recommendation. We include simple calibration, provider-token removal, covariance alignment (CORAL), maximum mean discrepancy (MMD) alignment, and GRL baselines.
 
-The contributions are: (i) a provider-aware contrastive encoder for accommodation quality embeddings at 3.69M-record scale; (ii) a CP-NN validation protocol for settings without verified cross-provider property identifiers; and (iii) a conservative evaluation showing both alignment gains and remaining provider signal. The rest of the paper describes the data and method, reports baseline comparisons, and discusses limitations.
+The contribution is modest but practical. We adapt contrastive learning to provider-aware accommodation quality embeddings at 3.69M-record scale; we use cross-provider nearest-neighbour mixing (CP-NN) as a validation protocol when verified property links are missing; and we report the remaining provider signal instead of presenting the representation as provider-independent. The rest of the paper describes the data, method, baseline comparisons, and limitations.
 
 % ---------------------------------------------------------------
 \section{Methods}
 
 \subsection{Data}
 
-We use three datasets from a B2B travel platform. Table~\ref{tab:dataset} summarizes the provider mix. The accommodation metadata contain 3,686,694 property records with provider, star rating, guest rating, popularity score, availability score, price, category, country, destination name, and coordinates. Guest rating is missing for 78.9\% of records. The transaction data contain 3,734 monthly booking-count rows over 13 months. The activity data contain 522,948 tourism listings and are used only for a secondary validation check discussed later.
+The experiments use three datasets provided by Travlr as part of the ICoICT 2026 Travlr Data Challenge. Travlr is a white-label B2B travel platform that aggregates accommodation and activity inventory from multiple providers and exposes it through partner storefronts. Table~\ref{tab:dataset} gives the provider mix. The accommodation metadata contain 3,686,694 property records with provider, star rating, guest rating, popularity score, availability score, price, category, country, destination name, and coordinates. Guest rating is missing for 78.9\% of records. The transaction table contains 3,734 monthly booking-count rows over 13 months. The activity table contains 522,948 tourism listings and is used only for a secondary validation check.
 
-The implementation and analysis scripts are available at: \url{https://github.com/Liamours/icoict26-challenge-b2b_travel_platform}.
+The implementation and analysis scripts are available at: {\small\url{https://github.com/Liamours/icoict26-challenge-b2b_travel_platform}}.
 
 \begin{table}[t]
 \caption{Dataset Summary}
@@ -75,28 +75,28 @@ Total & \multicolumn{3}{l}{3,686,694 accommodation records} \\
 \end{center}
 \end{table}
 
-Continuous features are normalized before training. Star ratings are clipped to $[0,5]$, guest ratings to $[0,10]$, coordinates to latitude/90 and longitude/180, and prices are log-transformed after removing values above the 99th percentile. Missing values are represented with binary flags. Provider, category, and country are encoded with learned lookup embeddings.
+Continuous fields are scaled before training. Star ratings are clipped to $[0,5]$, guest ratings to $[0,10]$, coordinates are divided by their natural bounds, and prices are log-transformed after removing values above the 99th percentile. Missing numeric values are set to zero and paired with missingness flags. Provider, category, and country are encoded with learned lookup embeddings.
 
 \subsection{Positive Pairs}
 
-Verified cross-provider property links are not available. We therefore use destination and star-tier co-membership as weak supervision. For property $i$ with star rating $r_i$, the quality tier is
+The dataset does not contain verified cross-provider links for the same physical property. We therefore build positives from a weaker signal: destination and star-tier co-membership. For property $i$ with star rating $r_i$, the quality tier is
 \begin{equation}
 t_i=\min\{4,\max\{-1,\lfloor r_i \rfloor\}\},
 \label{eq:tier}
 \end{equation}
-where $\lfloor\cdot\rfloor$ is the floor operator. Missing ratings are assigned to $t_i=-1$ and excluded from positive-pair training. Positive pairs are sampled from the same destination and non-missing tier. With a minimum cluster size of 5, this gives 68,374 valid clusters covering 3,158,693 properties (85.7\%). Coverage is 90.6\%, 85.7\%, and 80.7\% for minimum cluster sizes of 2, 5, and 10, respectively. Cluster sizes are skewed: median 12, p90 80, p99 594, and maximum 22,585.
+where $\lfloor\cdot\rfloor$ is the floor operator. Missing ratings are assigned to $t_i=-1$ and are excluded from positive-pair training. Pairs are sampled from the same destination and non-missing tier. With a minimum cluster size of 5, this produces 68,374 valid clusters and covers 3,158,693 properties (85.7\%). Coverage is 90.6\%, 85.7\%, and 80.7\% for minimum cluster sizes of 2, 5, and 10, respectively. Cluster sizes are skewed: median 12, p90 80, p99 594, and maximum 22,585.
 
-This supervision is useful but noisy. Two properties in the same city and star tier are not guaranteed to be equivalent. The evaluation therefore treats the learned representation as a provider-mixing embedding, not as verified property matching.
+This is the weakest part of the design. Two properties in the same city and tier can differ in brand, location quality, facilities, or target customer. The evaluation therefore treats the model as a provider-mixing representation, not as a property-matching model.
 
 \subsection{Encoder}
 
-The encoder is a compact multilayer perceptron. The input has 43 dimensions: 11 continuous features plus provider, category, and country embeddings of sizes 8, 8, and 16. The hidden layers are 512 and 256 units with batch normalization and ReLU. The stored embedding is 128-dimensional. A projection head maps 128 to 64 to 32 dimensions for contrastive training and is discarded at inference. The encoder has 204,248 trainable parameters.
+The encoder is intentionally small. Its input has 43 dimensions: 11 continuous features plus provider, category, and country embeddings of sizes 8, 8, and 16. The hidden layers have 512 and 256 units, with batch normalization and ReLU. The stored property embedding is 128-dimensional. During training, a projection head maps 128 to 64 to 32 dimensions; this head is discarded at inference. The encoder has 204,248 trainable parameters.
 
-The dimensions are implementation choices, not claimed optima. A short 20-epoch sweep found that a wider 751k-parameter model increased CP-NN@10 only from 57.4\% to 59.2\%, while increasing model size and provider recoverability. We keep the smaller encoder as a practical trade-off.
+The dimensions are a practical choice rather than a claim of optimality. In a short 20-epoch sweep, a wider 751k-parameter model increased CP-NN@10 only from 57.4\% to 59.2\%, while also increasing model size and provider recoverability. We keep the smaller encoder.
 
 \subsection{Training}
 
-The NT-Xent loss uses cosine similarity $s(\cdot,\cdot)$ and temperature $\tau=0.07$~\cite{chen2020simclr}. For a batch with $N=512$ positive pairs, we minimize
+Training uses the normalized temperature-scaled cross-entropy (NT-Xent) loss~\cite{chen2020simclr} with temperature $\tau=0.07$. Let $s(\mathbf{u},\mathbf{v})=\mathbf{u}^\top\mathbf{v}/(\|\mathbf{u}\|\|\mathbf{v}\|)$ denote cosine similarity between two vectors. For a batch with $N=512$ positive pairs, the loss is
 \begin{equation}
 \mathcal{L}=
 -\frac{1}{2N}\sum_{i=1}^{2N}
@@ -104,13 +104,13 @@ The NT-Xent loss uses cosine similarity $s(\cdot,\cdot)$ and temperature $\tau=0
 {\sum_{k=1}^{2N}\mathbf{1}_{k\neq i}\exp(s(z_i,z_k)/\tau)},
 \label{eq:loss}
 \end{equation}
-where $j(i)$ indexes the paired view of anchor $i$. Augmentation consists of Gaussian noise on continuous features ($\sigma=0.05$), feature dropout (0.2), and provider-token masking with probability 0.5. At inference, the provider token is always masked.
+where $j(i)$ indexes the paired view of anchor $i$. Augmentation consists of Gaussian noise on continuous features ($\sigma=0.05$), feature dropout (0.2), and provider-token masking with probability 0.5. During inference, the provider token is always set to the masked value.
 
-We train with Adam, learning rate $10^{-3}$, weight decay $10^{-6}$, cosine annealing, gradient clipping at 1.0, and early stopping. Because inventory is provider-imbalanced, batches are sampled with equal provider representation.
+We train with Adam~\cite{kingma2015adam}, learning rate $10^{-3}$, weight decay $10^{-6}$, cosine annealing, gradient clipping at 1.0, and early stopping. Since the inventory is provider-imbalanced, each batch is sampled with equal provider representation.
 
 \subsection{Evaluation}
 
-The main distribution metric is mean per-dimension KS divergence across provider pairs:
+The first evaluation metric is mean per-dimension Kolmogorov--Smirnov (KS) divergence across provider pairs:
 \begin{equation}
 \mathrm{KS}(X)=\frac{1}{D\binom{|\mathcal{P}|}{2}}\sum_{d=1}^{D}\sum_{p<q}
 \sup_x |F_{p,d}(x)-F_{q,d}(x)| ,
@@ -118,51 +118,62 @@ The main distribution metric is mean per-dimension KS divergence across provider
 \end{equation}
 where $F_{p,d}$ is the empirical CDF for provider $p$ and dimension $d$~\cite{hodges1958significance}. With four providers, the average is over six provider pairs.
 
-The raw baseline uses 13 dimensions: the 11 continuous features plus normalized category and country identifiers, with the provider token excluded. Local provider mixing is measured with CP-NN@K. For query $i$, let $\mathcal{N}_K(i)$ be its $K$ nearest cosine neighbours and $g_i$ its provider:
+KS alone is not enough because it measures one-dimensional marginal differences. We therefore define a second protocol, cross-provider nearest-neighbour rate (CP-NN), to measure local provider mixing in the full representation space. CP-NN is not taken from prior work; we define it here as a validation tool for settings where verified cross-provider property links are unavailable.
+
+The protocol proceeds as follows. (1)~Normalize all property representations to unit $\ell_2$ length. (2)~For each query property $i$, retrieve its $K$ nearest neighbours by cosine similarity, excluding the query itself. (3)~Count the fraction of those neighbours whose provider label differs from query $i$. (4)~Average this fraction over all $n$ queries. The raw baseline excludes the provider token and uses 13 dimensions: the 11 continuous features plus normalized category and country identifiers.
+
+Formally, let $\mathcal{N}_K(i)$ denote the $K$ nearest cosine neighbours of query $i$ and $g_i$ its provider label:
 \begin{equation}
 \mathrm{CP\mbox{-}NN@}K=\frac{1}{nK}\sum_{i=1}^{n}\sum_{j\in\mathcal{N}_K(i)}
 \mathbf{1}[g_i\neq g_j].
 \label{eq:cpnn}
 \end{equation}
-We use $K=10$ unless stated otherwise. The random-mixing baseline is
+We set $K=10$ as the default. Values of $K$ below 5 are sensitive to individual outliers, while values above 20 begin to include properties from distant quality tiers; $K=10$ balances local structure and stability. We also report CP-NN across $K\in\{1,5,10,20,50\}$ to confirm the result is not specific to one neighbourhood size (Section~\ref{sec:discussion}).
+
+The upper bound for CP-NN under random assignment is determined by provider proportions in the evaluation sample. Table~\ref{tab:dataset} shows that the four providers (RateHawk, Expedia, Agoda, HotelBeds) contribute unequally to the full inventory. The evaluation sample, however, is drawn with equal representation: 1{,}000 properties per provider, giving $p_i=0.25$ for all $i\in\{1,2,3,4\}$. The expected cross-provider fraction under random neighbour assignment is then:
 \begin{equation}
-1-\sum_i p_i^2=0.75,
+\mathrm{CP\mbox{-}NN}_{\mathrm{random}}=1-\sum_{i=1}^{4} p_i^2=1-4\times0.25^2=0.75.
 \label{eq:random}
 \end{equation}
-where $p_i$ is the provider proportion. Confidence intervals for KS and CP-NN are computed from 30 balanced evaluation resamples, not from independent retraining runs.
+This value is fixed by the balanced sampling design, not by the inventory proportions in Table~\ref{tab:dataset}. Confidence intervals for both KS and CP-NN are computed from 30 balanced evaluation resamples, not from independent retraining runs.
+
+\subsection{Baselines}
+
+Five baselines appear in Table~\ref{tab:main_results}. \textit{Star calibration} applies a provider-wise quantile mapping to star ratings before computing raw features, a monotone recalibration approach analogous to ordinal regression with provider offsets~\cite{mccullagh1980regression}. \textit{Provider token removed} trains the same encoder with the provider embedding permanently set to the masked value throughout training, so the model never sees provider identity. \textit{CORAL penalty} adds a covariance alignment (CORAL) loss between provider-specific embedding distributions to the contrastive objective, with regularization weight $\lambda$~\cite{sun2016coral}. \textit{MMD penalty} replaces the CORAL term with a maximum mean discrepancy (MMD) loss using a radial basis function kernel~\cite{gretton2012kernel}. \textit{GRL baseline} prepends a gradient reversal layer (GRL)~\cite{ganin2015unsupervised} to a provider classifier trained jointly with the encoder to reduce provider discriminability. For CORAL and MMD we test $\lambda\in\{0.01,0.05\}$; for GRL we use a linear $\lambda$ schedule and report the setting with the highest CP-NN@10.
 
 % ---------------------------------------------------------------
 \section{Results}
 
 \subsection{Main Alignment Results}
 
-Table~\ref{tab:main_results} gives the main comparison. Raw features have low cross-provider mixing: CP-NN@10 is 16.7\%. Simple star calibration does not solve the problem; it slightly lowers KS but also lowers CP-NN. The contrastive embedding reduces KS from 0.304 to 0.130 and raises CP-NN@10 to 59.1\%. It remains below the 75.0\% random baseline, so the result should be read as reduced provider structure, not full invariance.
+Table~\ref{tab:main_results} gives the main comparison. The raw feature space is strongly provider-separated: CP-NN@10 is only 16.7\%. Star calibration lowers KS from 0.304 to 0.289 but does not improve local mixing, with CP-NN@10 dropping further to 11.7\%. The contrastive embedding reduces KS from 0.304 to 0.130 and raises CP-NN@10 from 16.7\% to 59.1\%, a 42.4 percentage-point increase that remains 15.9 pp below the 75.0\% random-mixing value.
 
 \begin{table*}[t]
 \caption{Main Alignment and Baseline Results}
 \label{tab:main_results}
-\begin{center}
-\begin{tabular}{lccccc}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccccl}
 \toprule
 \textbf{Method} & \textbf{KS}~$\downarrow$ & \textbf{Quality Acc.}~$\uparrow$ & \textbf{Provider Acc.}~$\downarrow$ & \textbf{CP-NN@10}~$\uparrow$ & \textbf{Notes} \\
 \midrule
 Raw features & 0.304 [0.299, 0.309] & 86.2\% & 84.2\% & 16.7\% & 13D feature baseline \\
-Star calibration & 0.289 [0.285, 0.295] & -- & 91.3\% & 11.7\% & Provider-wise quantile mapping \\
+Star calibration & 0.289 [0.285, 0.295] & -- & 91.3\% & 11.7\% & Quantile mapping~\cite{mccullagh1980regression} \\
 Provider token removed & -- & 99.1\% & 85.6\% & 57.9\% & Provider always masked during training \\
-CORAL penalty & -- & 99.2\% & 84.3\% & 57.9\% & Best of $\lambda\in\{0.01,0.05\}$ \\
-MMD penalty & -- & 99.3\% & 85.7\% & 58.2\% & Best of $\lambda\in\{0.01,0.05\}$ \\
-GRL baseline & -- & 99.3\% & \textbf{82.9\%} & 58.4\% & Linear schedule, best CP-NN \\
+CORAL penalty & -- & 99.2\% & 84.3\% & 57.9\% & \cite{sun2016coral}, best of $\lambda\in\{0.01,0.05\}$ \\
+MMD penalty & -- & 99.3\% & 85.7\% & 58.2\% & \cite{gretton2012kernel}, best of $\lambda\in\{0.01,0.05\}$ \\
+GRL baseline & -- & 99.3\% & \textbf{82.9\%} & 58.4\% & \cite{ganin2015unsupervised}, linear schedule \\
 \textbf{Proposed encoder} & \textbf{0.130 [0.124, 0.134]} & \textbf{99.5\%} & 84.0\% & \textbf{59.1\%} & Stochastic provider masking \\
 \midrule
 Random mixing & -- & -- & -- & 75.0\% & Based on provider proportions \\
 \bottomrule
-\end{tabular}
-\end{center}
+\end{tabular}}
 \end{table*}
 
-The quality-tier probe reaches 99.3--99.5\% across contrastive variants. This is only a sanity check because tier is also used to construct positive pairs. The more important question is whether provider information is reduced. On the main probe, provider accuracy remains 84.0\%, so provider identity is still recoverable. On a separate balanced 4,000-property masked-inference sample, provider accuracy drops from 84.2\% on raw features to 52.3\% on embeddings; this shows reduced provider signal in that setting, but it does not remove the residual full-space separability seen in the main probe.
+In Table~\ref{tab:main_results}, ``--'' means that the metric was not produced by that validation run. The short-run retraining baselines were included mainly to check whether simple provider removal or explicit alignment losses improved CP-NN.
 
-The additional distribution metrics point in the same direction. On the balanced validation sample, provider-classifier AUC drops from 0.957 on raw 13-dimensional features to 0.775 on embeddings. Mean MMD$^2$ decreases from 0.414 to 0.037, and mean one-dimensional Wasserstein distance decreases from 0.178 to 0.015. Fig.~\ref{fig:robustness} shows the resampled KS and CP-NN intervals.
+The quality-tier probe reaches 99.3--99.5\% across contrastive variants. This number is easy to over-read. We use it only as a sanity check because tier is also used to form positive pairs. The more relevant question is provider leakage. On the main probe, provider accuracy remains 84.0\%, so provider identity is still recoverable. A separate balanced 4,000-property masked-inference check gives a different view: provider accuracy drops from 84.2\% on raw features to 52.3\% on embeddings. The embedding therefore reduces provider signal in that setting, but it does not remove provider separability.
+
+The auxiliary distribution metrics are consistent with this reading. On the balanced validation sample, provider-classifier AUC drops from 0.957 on raw 13-dimensional features to 0.775 on embeddings. Mean MMD$^2$ decreases from 0.414 to 0.037, and mean one-dimensional Wasserstein distance~\cite{villani2009optimal} decreases from 0.178 to 0.015. Fig.~\ref{fig:robustness} shows the resampled KS and CP-NN intervals.
 
 \begin{figure}[t]
 \centering
@@ -173,39 +184,48 @@ The additional distribution metrics point in the same direction. On the balanced
 
 \subsection{Ablations and Sensitivity}
 
-The provider-token ablation is informative. Training with the provider token always removed gives 57.9\% CP-NN@10, below the proposed stochastic masking result of 59.1\%. This suggests that occasional provider visibility during training is not the main reason for provider mixing; the contrastive destination--tier objective and balanced sampling also matter.
+Removing the provider token throughout training gives 57.9\% CP-NN@10, below the stochastic masking result of 59.1\%. Provider masking is therefore not the whole explanation. The destination--tier contrastive objective and balanced sampling also matter.
 
-Alignment penalties also do not clearly improve the result. CORAL reaches 57.9\% CP-NN@10 and MMD reaches 58.2\%. At the GRL setting with best CP-NN@10, provider accuracy is 82.9\% and CP-NN@10 is 58.4\%. A stronger GRL setting ($\lambda=0.5$) lowers quality accuracy to 97.7\%, showing the expected utility--invariance trade-off.
+CORAL reaches 57.9\% CP-NN@10, MMD reaches 58.2\%, and GRL reaches 58.4\% — all below the proposed encoder at 59.1\%. None of the explicit alignment losses improves CP-NN over stochastic masking. The best GRL setting gives 82.9\% provider accuracy. A stronger GRL setting ($\lambda=0.5$) lowers quality accuracy to 97.7\%, which is the expected utility--invariance trade-off.
 
-CP-NN is stable across neighbourhood sizes. For $K=\{1,5,10,20,50\}$, the proposed embeddings reach 48.3\%, 56.1\%, 59.1\%, 61.8\%, and 64.2\%. Raw features reach 13.9\%, 15.9\%, 16.7\%, 17.7\%, and 19.6\%. With cosine-distance thresholds of 0.05, 0.10, 0.20, and 0.40, embedding CP-NN@10 remains 58.1\%, 59.0\%, 59.1\%, and 59.1\%.
+The CP-NN gain is not tied to one neighbourhood size. Fig.~\ref{fig:cpk} shows CP-NN across $K=\{1,5,10,20,50\}$: the proposed embeddings reach 48.3\%, 56.1\%, 59.1\%, 61.8\%, and 64.2\%, while raw features reach 13.9\%, 15.9\%, 16.7\%, 17.7\%, and 19.6\%. With cosine-distance thresholds of 0.05, 0.10, 0.20, and 0.40, embedding CP-NN@10 remains 58.1\%, 59.0\%, 59.1\%, and 59.1\%.
 
-Segment checks show that mixing is not uniform. CP-NN@10 is 63.3\%, 62.0\%, and 60.1\% for small, medium, and large destination-size bands. By price band, it is 51.1\%, 43.4\%, and 55.6\% for low, mid, and high prices. The lower mid-price result suggests that provider-correlated price structure remains.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/cp_nn_k_sensitivity.png}
+\caption{CP-NN sensitivity across neighbourhood sizes. The contrastive embedding has higher cross-provider mixing for all tested $K$ values but remains below the 75.0\% random baseline.}
+\label{fig:cpk}
+\end{figure}
+
+The result is less even when split by segment. CP-NN@10 is 63.3\%, 62.0\%, and 60.1\% for small, medium, and large destination-size bands. By price band, it is 51.1\%, 43.4\%, and 55.6\% for low, mid, and high prices. The mid-price band shows the weakest cross-provider mixing of the three bands.
 
 \subsection{Transaction and Activity Checks}
 
-The transaction data are too sparse for a reliable ranking metric. A conservative audit finds only 13 destinations with at least 10 matched properties and at least 3 booked properties, below the 20-destination threshold set before reporting NDCG. The 40.4\% match rate between transaction and accommodation property identifiers further limits coverage. We therefore do not report NDCG, click-through rate, conversion, or revenue.
+We tried to use the transaction file for a small ranking check, but the usable subset is too small. A conservative audit finds only 13 destinations with at least 10 matched properties and at least 3 booked properties, below the 20-destination threshold set before reporting NDCG. The 40.4\% match rate between transaction and accommodation property identifiers further limits coverage. We therefore do not report normalized discounted cumulative gain (NDCG), click-through rate, conversion, or revenue.
 
-The activity-affinity module is also treated as exploratory. A geography-only top-20 baseline retrieves same-destination activities for 98.5\% of destinations, while the learned affinity retrieves same-destination activities at 6.7\% on average. This result argues against using the activity module as evidence for recommendation quality. We keep it only as a future direction.
+The activity-affinity experiment is also exploratory. A geography-only top-20 baseline retrieves same-destination activities for 98.5\% of destinations, while the learned affinity retrieves same-destination activities at 6.7\% on average. This argues against using the activity module as evidence for recommendation quality. We keep it only as a future direction.
 
 % ---------------------------------------------------------------
 \section{Discussion}
 \label{sec:discussion}
 
-The main result is a better provider-mixing representation, not a provider-free representation. KS decreases by 57.4\%, CP-NN@10 rises from 16.7\% to 59.1\%, and MMD/Wasserstein distances also improve. At the same time, provider identity remains recoverable and CP-NN remains below the random baseline. These statements are not contradictory: KS measures marginal one-dimensional alignment, while a provider classifier can use higher-dimensional structure. A raw-feature permutation check also shows that guest-rating missingness, popularity, star-rating missingness, and price missingness carry provider signal.
+Two conclusions are useful. The representation helps, and it is not provider-neutral. KS decreases by 57.4\%, CP-NN@10 rises from 16.7\% to 59.1\%, and MMD/Wasserstein distances also improve. At the same time, provider identity remains recoverable and CP-NN remains below the random baseline. These facts can coexist because KS measures marginal one-dimensional alignment, while a provider classifier can use higher-dimensional structure. A permutation importance analysis on the raw 13-dimensional features (full results in the project repository) shows that guest-rating missingness, popularity score, star-rating missingness, and price missingness are the top carriers of provider signal.
 
-The positive-pair proxy is the largest methodological limitation. Destination--tier co-membership is available at scale, but it is not the same as verified cross-provider equivalence. Large destination-tier clusters may contain many non-equivalent properties. Future work should use verified property links, entity-resolution models, or manually checked pairs to measure whether local neighbours are truly substitutable.
+The positive-pair proxy is the largest methodological limitation. Destination--tier co-membership is available at scale, but it is not the same as verified cross-provider equivalence. Large destination-tier clusters may contain properties that are not close substitutes. Better evaluation would use verified property links, entity-resolution models, or manually checked pairs to test whether local neighbours are truly substitutable.
 
-The baseline results are useful because they narrow the claim. Provider removal, CORAL, MMD, and GRL variants do not clearly beat stochastic masking on CP-NN in short-run experiments. GRL can reduce provider accuracy, but stronger settings begin to reduce quality accuracy. A more complete study should still include longer adversarial training, ordinal calibration with provider offsets, and multiple retraining seeds.
+The baseline results narrow the claim. Provider removal, CORAL, MMD, and GRL variants do not clearly beat stochastic masking on CP-NN in these short-run experiments. GRL can reduce provider accuracy, but stronger settings begin to reduce quality accuracy. A fuller study should still include longer adversarial training, ordinal calibration with provider offsets, and multiple retraining seeds.
 
-The current evaluation is representation-level. This is appropriate for cold-start inventory, where booking data are sparse, but it does not prove marketplace impact. The transaction audit does not support a reliable NDCG estimate, and the activity module fails against a simple geography baseline. As an operational insight, the embedding is most suitable as an additional ranking or retrieval feature for provider-mixed inventory, not as a direct replacement for booking-based ranking. Deployment would need ranking experiments, drift monitoring, and checks that reducing provider signal does not remove legitimate provider-specific information such as data freshness or coverage quality.
+The evaluation remains representation-level. That is acceptable for cold-start inventory, where booking data are sparse, but it does not show marketplace impact. The transaction audit does not support a reliable NDCG estimate, and the activity module fails against a simple geography baseline. In a production setting, this embedding would be an additional ranking or retrieval feature for provider-mixed inventory, not a replacement for booking-based ranking. Deployment would still need ranking experiments, drift monitoring, and checks that reducing provider signal does not remove useful provider-specific information such as data freshness or coverage quality.
+
+What CP-NN level is sufficient for deployment is an open question because no prior threshold exists for this protocol. A natural reference point is the random-mixing rate of 75.0\%: at that level, a query's nearest neighbours are distributed across providers in proportion to their sample share, which means provider identity carries no retrieval bias. The current result of 59.1\% is 15.9 percentage points below that reference. Whether this gap is acceptable depends on how the embedding is used. As a supplementary re-ranking signal combined with booking-based features, 59.1\% may be sufficient to reduce the provider-scale artifact without requiring full invariance. As a standalone ranking feature, the remaining provider signal (provider classifier accuracy 84.0\%, AUC 0.775) is likely too large for deployment without further alignment. The operational test that would resolve this is a controlled ranking experiment with real booking outcomes, which is outside the scope of the current dataset.
 
 % ---------------------------------------------------------------
 \section{Conclusion}
 
-We trained a provider-aware contrastive encoder for accommodation quality embeddings on 3.69 million records. The embedding reduces mean per-dimension KS divergence from 0.304 to 0.130 and raises CP-NN@10 from 16.7\% to 59.1\%. These gains hold across neighbourhood sizes and are not matched by simple calibration, provider-token removal, CORAL, MMD, or short-run GRL baselines. The method remains only partially provider-invariant, and the paper does not claim downstream ranking improvement. The next step is evaluation with verified property links or denser transaction labels.
+We trained a provider-aware contrastive encoder for accommodation quality embeddings on 3.69 million records. Within the available validation setup, the embedding reduces mean per-dimension KS divergence from 0.304 to 0.130 and raises CP-NN@10 from 16.7\% to 59.1\%. The gain appears across neighbourhood sizes and is not matched by simple calibration, provider-token removal, CORAL, MMD, or short-run GRL baselines. The method is still only partially provider-invariant, and we do not claim downstream ranking improvement. The next step is evaluation with verified property links or denser transaction labels.
 
 \section*{Acknowledgment}
-The authors thank the data provider for making the datasets available for this study.
+The authors thank Travlr for providing the datasets used in this study through the ICoICT 2026 Travlr Data Challenge.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

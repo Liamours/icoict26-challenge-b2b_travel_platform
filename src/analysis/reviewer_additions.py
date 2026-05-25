@@ -167,6 +167,14 @@ def cluster_stats(df):
 
 
 def plot_outputs():
+    plt.rcParams.update({
+        "font.family": "Times New Roman",
+        "font.weight": "normal",
+        "axes.labelweight": "normal",
+        "axes.titleweight": "normal",
+        "legend.fontsize": 8,
+    })
+
     BLUE = "#1B4F8A"
     RED = "#C0392B"
     GRAY = "#A8A8A8"

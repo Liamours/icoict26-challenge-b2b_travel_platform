@@ -48,6 +48,7 @@ venv/
 literature_review/
 manuscript/reference/
 manuscript/figures/*
+!manuscript/figures/cp_nn_k_sensitivity.png
 !manuscript/figures/reviewer_robustness.png
 manuscript/template/
 manuscript/template/*.pdf
@@ -61,7 +62,7 @@ manuscript/*.out
 manuscript/*.synctex.gz
 
 # Temporary scripts and local notes
-guide/
+context/
 notebook/
 scripts/*.txt
 src/report/
